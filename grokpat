@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+import sys
+
+pattern_files = ["grok-patterns"]
+
+def main(pattern_name):
+    patterns = {}
+    for pattern_file in pattern_files:
+        file = open(pattern_file)
+        patterns = dict(patterns.items() + parse_patterns(file))
+        file.close()
+    if pattern_name in patterns:
+        sys.stdout.write(patterns[pattern_name])
+        return
+
+    sys.stderr.write("Pattern not found.")
+    sys.exit(1)
+
+def parse_patterns(file):
+    return [separate_name_from_pattern(line.rstrip()) for line in file if not is_blank(line) or is_comment(line)]
+
+    for line in file:
+        line = line.rstrip()
+        if is_blank(line) or is_comment(line):
+            continue
+        print separate_name_from_pattern(line)
+
+def is_blank(line):
+    return not line.rstrip()
+
+def is_comment(line):
+    return line and line.startswith("#")
+
+def separate_name_from_pattern(line):
+    return tuple(line.split(' ', 1))
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        sys.stdout.write("Must be called with a pattern name")
+        sys.exit(1)
+    main(sys.argv[1].upper())
