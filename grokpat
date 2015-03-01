@@ -4,7 +4,7 @@ import re, sys
 
 pattern_files = ["grok-patterns"]
 
-def main(requested_patterns, dialect):
+def main(requested_patterns, want_raw):
     patterns = {}
     for pattern_file in pattern_files:
         file = open(pattern_file)
@@ -20,38 +20,35 @@ def main(requested_patterns, dialect):
 
     flattened_requested_patterns = '|'.join(patterns[p] for p in
         requested_patterns)
-    if dialect == 'raw':
+    if want_raw:
         sys.stdout.write(flattened_requested_patterns)
         sys.exit(0)
-    expanded_pattern = change_dialect(expand_grok_subpatterns(
-        flattened_requested_patterns, patterns), dialect)
+    expanded_pattern = expand_grok_subpatterns(flattened_requested_patterns,
+        patterns)
     sys.stdout.write(expanded_pattern)
 
 def parse_args(args):
     options = {
-        'dialect': None,
+        'raw': False,
         'patterns': []
     }
     for arg in args:
         if arg in ('-h', '--help'):
             print_usage()
             sys.exit(0)
-        if arg in ('--raw', '--ruby'):
-            if options['dialect']:
-                sys.stderr.write("Only one dialect may be specified.\n")
-                sys.exit(1)
-            options['dialect'] = arg[2:]
+        if arg == '--raw':
+            options['raw'] = True
         else:
             options['patterns'] += [arg.upper()]
     return options
 
 def print_usage():
-    sys.stderr.write("""Usage: %s ([--raw]|[pattern_name])...
+    sys.stderr.write("""Usage: %s [--raw] <pattern_name>...
 
 Read and return grok patterns as ruby regular expressions.
 
 Flags:
---raw      Do not expand the grok pattern; return the raw pattern.
+--raw      Print the pattern without recursive substitution.
 -h --help  Print usage information.
 """ % sys.argv[0])
 
@@ -75,16 +72,9 @@ def expand_grok_subpatterns(pattern, pattern_set):
     return expand_grok_subpatterns(re.sub(grok_subpattern_pattern,
         lambda m: pattern_set[m.group()[2:-1]], pattern), pattern_set)
 
-def change_dialect(pattern, dialect):
-    dialect = dialect if dialect else 'ruby'
-    dialect_converters = {
-        'ruby': lambda p: p
-    }
-    return dialect_converters[dialect](pattern)
-
 if __name__ == "__main__":
     options = parse_args(sys.argv[1:])
     if not options['patterns']:
         sys.stderr.write("Must be called with a pattern name.\n")
         sys.exit(1)
-    main(options['patterns'], options['dialect'])
+    main(options['patterns'], options['raw'])
