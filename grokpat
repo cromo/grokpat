@@ -46,13 +46,8 @@ def parse_args(args):
     return options
 
 def parse_patterns(file):
-    return [separate_name_from_pattern(line.rstrip()) for line in file if not is_blank(line) or is_comment(line)]
-
-    for line in file:
-        line = line.rstrip()
-        if is_blank(line) or is_comment(line):
-            continue
-        print separate_name_from_pattern(line)
+    return [separate_name_from_pattern(line.rstrip()) for line in file
+        if not is_blank(line) or is_comment(line)]
 
 def is_blank(line):
     return not line.rstrip()
