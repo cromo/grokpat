@@ -45,7 +45,7 @@ def parse_args(args):
 def print_usage():
     sys.stderr.write("""Usage: %s [--raw] <pattern_name>...
 
-Read and return grok patterns as ruby regular expressions.
+Read and return grok patterns as Ruby regular expressions.
 
 Flags:
 --raw      Print the pattern without recursive substitution.
