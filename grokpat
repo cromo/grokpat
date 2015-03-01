@@ -45,6 +45,16 @@ def parse_args(args):
             options['patterns'] += [arg.upper()]
     return options
 
+def print_usage():
+    sys.stderr.write("""Usage: %s ([--raw]|[pattern_name])...
+
+Read and return grok patterns as ruby regular expressions.
+
+Flags:
+--raw      Do not expand the grok pattern; return the raw pattern.
+-h --help  Print usage information.
+""" % sys.argv[0])
+
 def parse_patterns(file):
     return [separate_name_from_pattern(line.rstrip()) for line in file
         if not is_blank(line) or is_comment(line)]
