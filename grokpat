@@ -4,18 +4,42 @@ import sys
 
 pattern_files = ["grok-patterns"]
 
-def main(pattern_name):
+def main(requested_patterns, dialect):
     patterns = {}
     for pattern_file in pattern_files:
         file = open(pattern_file)
         patterns = dict(patterns.items() + parse_patterns(file))
         file.close()
-    if pattern_name in patterns:
-        sys.stdout.write(patterns[pattern_name])
-        return
 
-    sys.stderr.write("Pattern not found.")
-    sys.exit(1)
+    invalid_requested_patterns = [p for p in requested_patterns
+        if p not in patterns]
+    if invalid_requested_patterns:
+        for pattern in invalid_requested_patterns:
+            sys.stderr.write("Pattern not found: %s\n" % pattern)
+        sys.exit(1)
+
+    flattened_requested_patterns = '|'.join(patterns[p] for p in
+        requested_patterns)
+    sys.stdout.write(flattened_requested_patterns)
+
+def parse_args(args):
+    options = {
+        'dialect': None,
+        'patterns': []
+    }
+    for arg in args:
+        if arg in ('-h', '--help'):
+            print_usage()
+            sys.exit(0)
+        if arg in ('--raw', '--ruby'):
+            if options['dialect']:
+                sys.stderr.write("Only one dialect may be specified.\n")
+                sys.exit(1)
+            options['dialect'] = arg[2:]
+        else:
+            options['patterns'] += [arg.upper()]
+    sys.stdout.write("%s" % str(options))
+    return options
 
 def parse_patterns(file):
     return [separate_name_from_pattern(line.rstrip()) for line in file if not is_blank(line) or is_comment(line)]
@@ -36,7 +60,8 @@ def separate_name_from_pattern(line):
     return tuple(line.split(' ', 1))
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        sys.stdout.write("Must be called with a pattern name")
+    options = parse_args(sys.argv[1:])
+    if not options['patterns']:
+        sys.stderr.write("Must be called with a pattern name.\n")
         sys.exit(1)
-    main(sys.argv[1].upper())
+    main(options['patterns'], options['dialect'])
