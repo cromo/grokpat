@@ -38,7 +38,6 @@ def parse_args(args):
             options['dialect'] = arg[2:]
         else:
             options['patterns'] += [arg.upper()]
-    sys.stdout.write("%s" % str(options))
     return options
 
 def parse_patterns(file):
