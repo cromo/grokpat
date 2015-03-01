@@ -23,8 +23,8 @@ def main(requested_patterns, dialect):
     if dialect == 'raw':
         sys.stdout.write(flattened_requested_patterns)
         sys.exit(0)
-    expanded_pattern = expand_grok_subpatterns(flattened_requested_patterns,
-        patterns)
+    expanded_pattern = change_dialect(expand_grok_subpatterns(
+        flattened_requested_patterns, patterns), dialect)
     sys.stdout.write(expanded_pattern)
 
 def parse_args(args):
@@ -64,6 +64,13 @@ def expand_grok_subpatterns(pattern, pattern_set):
         return pattern
     return expand_grok_subpatterns(re.sub(grok_subpattern_pattern,
         lambda m: pattern_set[m.group()[2:-1]], pattern), pattern_set)
+
+def change_dialect(pattern, dialect):
+    dialect = dialect if dialect else 'ruby'
+    dialect_converters = {
+        'ruby': lambda p: p
+    }
+    return dialect_converters[dialect](pattern)
 
 if __name__ == "__main__":
     options = parse_args(sys.argv[1:])
