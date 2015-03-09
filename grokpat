@@ -1,15 +1,9 @@
 #!/usr/bin/env python
 
-import re, sys
+import os, re, sys
 
-pattern_files = ["grok-patterns"]
-
-def main(requested_patterns, want_raw):
-    patterns = {}
-    for pattern_file in pattern_files:
-        file = open(pattern_file)
-        patterns = dict(patterns.items() + parse_patterns(file))
-        file.close()
+def main(pattern_files, requested_patterns, want_raw):
+    patterns = load_pattern_files(pattern_files)
 
     invalid_requested_patterns = [p for p in requested_patterns
         if p not in patterns]
@@ -27,10 +21,32 @@ def main(requested_patterns, want_raw):
         patterns)
     sys.stdout.write(expanded_pattern)
 
+def load_pattern_files(pattern_files):
+    pattern_files = flatten_pattern_file_list(pattern_files)
+    patterns = {}
+    for pattern_file in pattern_files:
+        patterns = dict(patterns.items() + load_pattern_file(pattern_file))
+    return patterns
+
+def flatten_pattern_file_list(pattern_file_list):
+    return sum([alphabetical_file_listing(f) if os.path.isdir(f) else [f]
+        for f in pattern_file_list if os.path.exists(f)], [])
+
+def alphabetical_file_listing(dir):
+    return sorted(os.path.join(dir, f) for f in os.listdir(dir)
+        if os.path.isfile(os.path.join(dir, f)))
+
+def load_pattern_file(pattern_filename):
+    f = open(pattern_filename)
+    patterns = parse_patterns(f)
+    f.close()
+    return patterns
+
 def parse_args(args):
     options = {
         'raw': False,
-        'patterns': []
+        'patterns': [],
+        'pattern-files': get_default_pattern_files()
     }
     for arg in args:
         if arg in ('-h', '--help'):
@@ -38,9 +54,17 @@ def parse_args(args):
             sys.exit(0)
         if arg == '--raw':
             options['raw'] = True
+        elif arg.startswith('--pattern-file='):
+            options['pattern-files'].append(arg[len('--pattern-file='):])
         else:
             options['patterns'] += [arg.upper()]
     return options
+
+def get_default_pattern_files():
+    script_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+        'grok-patterns')
+    home_dir = os.path.join(os.path.expanduser("~"), '.grok-patterns')
+    return [script_dir, home_dir]
 
 def print_usage():
     sys.stderr.write("""Usage: %s [--raw] <pattern_name>...
@@ -48,8 +72,9 @@ def print_usage():
 Read and return grok patterns as Ruby regular expressions.
 
 Flags:
---raw      Print the pattern without recursive substitution.
--h --help  Print usage information.
+--pattern-file=<path>  Load additional pattern files/folders.
+--raw                  Print the pattern without recursive substitution.
+-h --help              Print usage information.
 """ % sys.argv[0])
 
 def parse_patterns(file):
@@ -77,4 +102,4 @@ if __name__ == "__main__":
     if not options['patterns']:
         sys.stderr.write("Must be called with a pattern name.\n")
         sys.exit(1)
-    main(options['patterns'], options['raw'])
+    main(options['pattern-files'], options['patterns'], options['raw'])
