@@ -2,6 +2,8 @@
 
 import os, re, sys
 
+__version__ = "0.1.0"
+
 def main(pattern_files, requested_patterns, want_raw):
     patterns = load_pattern_files(pattern_files)
 
@@ -52,6 +54,9 @@ def parse_args(args):
         if arg in ('-h', '--help'):
             print_usage()
             sys.exit(0)
+        if arg in ('-v', '--version'):
+            print_version()
+            sys.exit(0)
         if arg == '--raw':
             options['raw'] = True
         elif arg.startswith('--pattern-file='):
@@ -76,6 +81,9 @@ Flags:
 --raw                  Print the pattern without recursive substitution.
 -h --help              Print usage information.
 """ % sys.argv[0])
+
+def print_version():
+    sys.stdout.write("Grokpat version %s\n" % __version__)
 
 def parse_patterns(file):
     return [separate_name_from_pattern(line.rstrip()) for line in file
